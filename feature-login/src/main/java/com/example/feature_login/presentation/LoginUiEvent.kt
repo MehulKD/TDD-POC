@@ -1,10 +1,12 @@
 package com.example.feature_login.presentation
 
+import com.example.domain.error.LoginError
+
 sealed interface LoginUiEvent {
 
     data object NavigateToHome : LoginUiEvent
 
     data class ShowSnackbar(
-        val message: String
+        val error: LoginError
     ) : LoginUiEvent
 }

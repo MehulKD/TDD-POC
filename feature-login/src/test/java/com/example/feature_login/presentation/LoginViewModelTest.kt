@@ -2,7 +2,11 @@ package com.example.feature_login.presentation
 
 
 import app.cash.turbine.test
+import com.example.core_common.AppResult
 import com.example.core_testing.fake.FakeUserRepository
+import com.example.domain.error.LoginError
+import com.example.domain.error.toMessage
+import com.example.domain.model.User
 import com.example.domain.usecase.LoginUseCase
 import com.example.feature_login.MainDispatcherRule
 import com.google.common.truth.Truth.assertThat
@@ -95,26 +99,6 @@ class LoginViewModelTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun login_clicked_shows_loading() = runTest {
-
-        val repository = FakeUserRepository()
-
-        val viewModel = LoginViewModel(
-            LoginUseCase(repository)
-        )
-
-        viewModel.uiState.test {
-            viewModel.onAction(LoginUiAction.UsernameChanged("admin"))
-            viewModel.onAction(LoginUiAction.PasswordChanged("1234"))
-            viewModel.onAction(LoginUiAction.LoginClicked)
-
-            // Loading state
-            assertThat(awaitItem().isLoading).isTrue()
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
     fun login_clicked_calls_use_case() = runTest {
 
         val repository = FakeUserRepository()
@@ -190,5 +174,183 @@ class LoginViewModelTest {
             assertThat(awaitItem())
                 .isEqualTo(LoginUiEvent.NavigateToHome)
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun login_failure_updates_error() = runTest {
+
+        // Arrange
+        val repository = FakeUserRepository().apply {
+            givenLoginSuccess()
+        }
+
+        val viewModel = LoginViewModel(
+            LoginUseCase(repository)
+        )
+
+        viewModel.onAction(
+            LoginUiAction.UsernameChanged("admin")
+        )
+
+        viewModel.onAction(
+            LoginUiAction.PasswordChanged("wrong")
+        )
+
+        // Act
+        viewModel.onAction(LoginUiAction.LoginClicked)
+
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.uiState.value.isLoggedIn)
+            .isFalse()
+
+        assertThat(viewModel.uiState.value.isLoading)
+            .isFalse()
+
+        assertThat(viewModel.uiState.value.error)
+            .isEqualTo(LoginError.InvalidCredentials.toMessage())
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun login_failure_emits_snackbar() = runTest {
+
+        // Arrange
+        val repository = FakeUserRepository().apply {
+            givenLoginSuccess()
+        }
+
+        val viewModel = LoginViewModel(
+            LoginUseCase(repository)
+        )
+
+        viewModel.onAction(
+            LoginUiAction.UsernameChanged("admin")
+        )
+
+        viewModel.onAction(
+            LoginUiAction.PasswordChanged("wrong")
+        )
+
+        // Assert
+        viewModel.events.test {
+
+            // Act
+            viewModel.onAction(LoginUiAction.LoginClicked)
+
+            advanceUntilIdle()
+
+            assertThat(awaitItem())
+                .isEqualTo(
+                    LoginUiEvent.ShowSnackbar(
+                        LoginError.InvalidCredentials
+                    )
+                )
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun successful_login_clears_previous_error() = runTest {
+
+        // Arrange
+        val repository = FakeUserRepository()
+
+        val viewModel = LoginViewModel(
+            LoginUseCase(repository)
+        )
+
+        // First attempt fails
+        repository.givenLoginFailure(LoginError.InvalidCredentials)
+
+        viewModel.onAction(LoginUiAction.UsernameChanged("admin"))
+        viewModel.onAction(LoginUiAction.PasswordChanged("wrong"))
+        viewModel.onAction(LoginUiAction.LoginClicked)
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.error)
+            .isEqualTo(LoginError.InvalidCredentials.toMessage())
+
+        // Second attempt succeeds
+        repository.givenLoginSuccess()
+
+        viewModel.onAction(LoginUiAction.PasswordChanged("1234"))
+        viewModel.onAction(LoginUiAction.LoginClicked)
+
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.uiState.value.error)
+            .isNull()
+
+        assertThat(viewModel.uiState.value.isLoggedIn)
+            .isTrue()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun loading_is_hidden_after_login_failure() = runTest {
+
+        // Arrange
+        val repository = FakeUserRepository().apply {
+            givenLoginFailure(LoginError.InvalidCredentials)
+        }
+
+        val viewModel = LoginViewModel(
+            LoginUseCase(repository)
+        )
+
+        viewModel.onAction(LoginUiAction.UsernameChanged("admin"))
+        viewModel.onAction(LoginUiAction.PasswordChanged("wrong"))
+
+        // Act
+        viewModel.onAction(LoginUiAction.LoginClicked)
+
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.uiState.value.isLoading)
+            .isFalse()
+
+        assertThat(viewModel.uiState.value.isLoggedIn)
+            .isFalse()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun latest_username_and_password_are_used_for_login() = runTest {
+
+        // Arrange
+        val repository = FakeUserRepository().apply {
+            givenLoginSuccess()
+        }
+
+        val viewModel = LoginViewModel(
+            LoginUseCase(repository)
+        )
+
+        // User changes credentials multiple times
+        viewModel.onAction(LoginUiAction.UsernameChanged("oldUser"))
+        viewModel.onAction(LoginUiAction.PasswordChanged("oldPass"))
+
+        viewModel.onAction(LoginUiAction.UsernameChanged("admin"))
+        viewModel.onAction(LoginUiAction.PasswordChanged("1234"))
+
+        // Act
+        viewModel.onAction(LoginUiAction.LoginClicked)
+
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(repository.lastUsername)
+            .isEqualTo("admin")
+
+        assertThat(repository.lastPassword)
+            .isEqualTo("1234")
     }
 }

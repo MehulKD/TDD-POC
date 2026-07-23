@@ -3,6 +3,7 @@ package com.example.feature_login.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.core_common.AppResult
+import com.example.domain.error.toMessage
 import com.example.domain.usecase.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -38,6 +39,7 @@ class LoginViewModel @Inject constructor(
                     it.copy(username = action.username)
                 }
             }
+
             is LoginUiAction.PasswordChanged -> {
 
                 _uiState.update {
@@ -45,6 +47,7 @@ class LoginViewModel @Inject constructor(
                 }
 
             }
+
             LoginUiAction.LoginClicked -> {
                 _uiState.update {
                     it.copy(isLoading = true)
@@ -54,37 +57,46 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-   private fun login(){
-           viewModelScope.launch {
+    private fun login() {
+        viewModelScope.launch {
 
-               _uiState.update {
-                   it.copy(isLoading = true)
-               }
+            _uiState.update {
+                it.copy(isLoading = true)
+            }
 
-               when (
-                   loginUseCase(
-                       _uiState.value.username,
-                       _uiState.value.password
-                   )
-               ) {
+            val result = loginUseCase(
+                _uiState.value.username,
+                _uiState.value.password
+            )
+            when (result) {
 
-                   is AppResult.Success -> {
+                is AppResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isLoggedIn = true,
+                            error = null
+                        )
+                    }
 
-                       _uiState.update {
-                           it.copy(
-                               isLoading = false,
-                               isLoggedIn = true
-                           )
-                       }
+                    _events.emit(
+                        LoginUiEvent.NavigateToHome
+                    )
 
-                       _events.emit(
-                           LoginUiEvent.NavigateToHome
-                       )
+                }
 
-                   }
+                is AppResult.Error -> {
 
-                   is AppResult.Error -> Unit
-               }
-           }
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = result.error.toMessage()
+                        )
+                    }
+
+                    _events.emit(LoginUiEvent.ShowSnackbar(result.error))
+                }
+            }
+        }
     }
 }

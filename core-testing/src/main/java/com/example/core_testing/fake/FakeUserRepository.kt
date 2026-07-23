@@ -8,12 +8,29 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 class FakeUserRepository : UserRepository {
+    var lastUsername: String? = null
+    var lastPassword: String? = null
     var loginCalled = false
+    private var result: AppResult<User, LoginError> =
+        AppResult.Success(User(1, "Administrator"))
+
+    fun givenLoginSuccess(
+        user: User = User(1, "Administrator")
+    ) {
+        result = AppResult.Success(user)
+    }
+
+    fun givenLoginFailure(
+        error: LoginError
+    ) {
+        result = AppResult.Error(error)
+    }
     override suspend fun login(
         username: String,
         password: String
     ): AppResult<User, LoginError> {
-        println("Repository started")
+        lastUsername = username
+        lastPassword = password
         loginCalled = true
         val result= if (username.isBlank()) {
             AppResult.Error(LoginError.EmptyUsername)
@@ -24,7 +41,6 @@ class FakeUserRepository : UserRepository {
         } else {
             AppResult.Error(LoginError.InvalidCredentials)
         }
-        println("Repository finished")
         return result
     }
 }
