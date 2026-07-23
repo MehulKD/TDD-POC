@@ -1,5 +1,5 @@
 import com.example.core_common.AppResult
-import com.example.core_testing.fake.FakeUserRepository
+import com.example.core.testing.fake.FakeUserRepository
 import com.example.domain.error.LoginError
 import com.example.domain.usecase.LoginUseCase
 

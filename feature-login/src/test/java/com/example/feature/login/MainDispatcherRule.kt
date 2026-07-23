@@ -1,4 +1,4 @@
-package com.example.feature_login
+package com.example.feature.login
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

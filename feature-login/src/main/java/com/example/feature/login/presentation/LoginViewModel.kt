@@ -1,4 +1,4 @@
-package com.example.feature_login.presentation
+package com.example.feature.login.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

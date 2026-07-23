@@ -1,14 +1,12 @@
-package com.example.feature_login.presentation
+package com.example.feature.login.presentation
 
 
 import app.cash.turbine.test
-import com.example.core_common.AppResult
-import com.example.core_testing.fake.FakeUserRepository
+import com.example.core.testing.fake.FakeUserRepository
 import com.example.domain.error.LoginError
 import com.example.domain.error.toMessage
-import com.example.domain.model.User
 import com.example.domain.usecase.LoginUseCase
-import com.example.feature_login.MainDispatcherRule
+import com.example.feature.login.MainDispatcherRule
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle

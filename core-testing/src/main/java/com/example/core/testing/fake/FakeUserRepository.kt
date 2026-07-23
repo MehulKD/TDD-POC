@@ -1,11 +1,9 @@
-package com.example.core_testing.fake
+package com.example.core.testing.fake
 
 import com.example.domain.model.User
 import com.example.domain.repository.UserRepository
 import com.example.core_common.AppResult
 import com.example.domain.error.LoginError
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 class FakeUserRepository : UserRepository {
     var lastUsername: String? = null

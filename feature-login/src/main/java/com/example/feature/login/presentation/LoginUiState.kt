@@ -1,4 +1,4 @@
-package com.example.feature_login.presentation
+package com.example.feature.login.presentation
 
 data class LoginUiState(
     val username: String = "",

@@ -1,9 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "com.example.feature_login"
+    namespace = "com.example.feature.login"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -14,6 +15,9 @@ android {
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildFeatures {
+        compose = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -54,4 +58,8 @@ dependencies {
     testImplementation(libs.turbine)
 
     testImplementation(libs.coroutines.test)
+
+    androidTestImplementation(libs.androidx.compose.ui.test)
+
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

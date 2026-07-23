@@ -1,4 +1,4 @@
-package com.example.feature_login.presentation
+package com.example.feature.login.presentation
 
 import com.example.domain.error.LoginError
 
